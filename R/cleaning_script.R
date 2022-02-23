@@ -25,4 +25,5 @@ df[, 1:11] <- lapply(df[, 1:11], imputeOutlier)
 scale <- function(x) (x-min(x))/(max(x) - min(x))
 df[, 1:11] <- lapply(df[, 1:11], scale)
 
-write.csv(df, "data/clean/wine_quality.csv")
+colnames(df) <- gsub("\\.", "_", names(df))
+write.csv(df, "data/clean/wine_quality.csv", row.names = FALSE)
