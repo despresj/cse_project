@@ -1,0 +1,42 @@
+---
+title: "data exploration"
+author: "Joe Despres"
+date: "3/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+df <- read_csv("data/clean/wine_quality.csv")
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+df %>% 
+  ggplot(aes(x = residual_sugar, y = alcohol, color = as.factor(quality))) + 
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  facet_wrap(~quality)
+```
+```{r}
+df %>% ggplot(aes(x = quality)) + 
+df <- read.csv("data/clean/wine_quality.csv")  geom_histogram()
+```
+
+```{r}
+hist_plotter <- function (x) {
+if(is.numeric(df$x)){
+df %>% 
+ ggplot(aes(x ={{x}} , fill = factor(quality))) + 
+  geom_histogram(position = "dodge", bins = 50) +
+  facet_wrap(~quality)
+}
+
+}
+map(names(df), hist_plotter)
+```
