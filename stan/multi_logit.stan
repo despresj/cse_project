@@ -1,27 +1,28 @@
 data {
    int N_train; 
    int N_test; 
-   int K;
-   int D;
+   int K;                       // number of classees
+   int D;                       // number of predictors
    int y_train[N_train];
-   matrix[N_train, D] X_train;
-   matrix[N_test, D] X_test;
+   row_vector[D] X_train[N_train];
+   row_vector[D] X_test[N_test];
 }
 
 parameters {
-   matrix[D, K] beta;
+   vector[D] beta;
+   ordered[K-1] c;
 }
 
 model {
- matrix[N_train, K] x_beta = X_train * beta;
- to_vector(beta) ~ normal(0, 2);
+   // prior
+ beta ~ normal(0, 1); 
  
  for (i in 1:N_train)
- y_train[i] ~ categorical_logit(x_beta[i]');
+   y_train[i] ~ ordered_logistic(X_train[i] * beta, c);
 }
 
-// generated quantities{
-//    vector[N_test] y_test;
-//    for(i in 1:N_test)
-//    y_test[i] = categorical_logit(X_test[i] * beta);
-// }
+generated quantities {
+  int<lower=1, upper=K> y_test[N_test];
+  for (i in 1:N_test)
+    y_test[i] = ordered_logistic_rng(X_test[i] * beta, c);
+}
