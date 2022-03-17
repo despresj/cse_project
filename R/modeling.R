@@ -21,21 +21,26 @@ wine_data <- list(
   X_train = X_train,
   X_test = X_test
 )
-
+start <- Sys.time()
 fit <- stan("stan/multi_logit.stan",
-            data=wine_data,
+            data = wine_data,
             chains = 8,
-            iter = 250,
-            warmup = 100
+            iter = 130,
+            warmup = 80
             )
+runtime <- Sys.time() - start
 print(fit)
-
+print(runtime)
 beepr::beep()
+
 traceplot(fit, pars=paste0("beta[", 1:13, "]"))
 
 params <- extract(fit)
-y <- params$y_test 
-yhat <- apply(y, 2, DescTools::Mode) + 4
+y_test <- apply(params$y_test, 2, DescTools::Mode) + 3
 
-mean(abs(yhat - df_test$quality))
- 
+library(dplyr)
+library(ggplot2)
+
+results <- tibble(yhat = y_test, y = df_test$quality, error = abs(yhat - y))
+mae <- mean(results$error)
+mae
