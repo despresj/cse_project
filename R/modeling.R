@@ -2,7 +2,7 @@ library(rstan) # observe startup messages
 options(mc.cores = parallel::detectCores())
 set.seed(69)
 df <- read.csv("data/clean/wine_quality.csv")
-train <- sample(1:nrow(df), size = floor(nrow(df) * 0.8), replace = FALSE)
+train <- sample(1:nrow(df), size = floor(nrow(df) * 0.5), replace = FALSE)
 df_train <- df[train,]
 df_test <- df[-train,]
 
@@ -24,9 +24,9 @@ wine_data <- list(
 start <- Sys.time()
 fit <- stan("stan/multi_logit.stan",
             data = wine_data,
-            chains = 8,
-            iter = 130,
-            warmup = 80
+            chains = 16,
+            iter = 1000,
+            warmup = 100
             )
 runtime <- Sys.time() - start
 print(fit)
@@ -41,6 +41,7 @@ y_test <- apply(params$y_test, 2, DescTools::Mode) + 3
 library(dplyr)
 library(ggplot2)
 
+caret::confusionMatrix(data=factor(y_test), 
+                       reference = factor(df_test$quality))
 results <- tibble(yhat = y_test, y = df_test$quality, error = abs(yhat - y))
 mae <- mean(results$error)
-mae
