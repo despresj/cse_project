@@ -15,7 +15,7 @@ parameters {
 
 model {
    // prior
- beta ~ normal(0, .01); 
+ beta ~ normal(0, 1); 
  
  for (i in 1:N_train)
    y_train[i] ~ ordered_logistic(X_train[i] * beta, c);
@@ -23,11 +23,8 @@ model {
 
 generated quantities {
   int<lower=1, upper=K> y_test[N_test];
-  int<lower=1, upper=K> yhat[N_train];
-  
+
   for (i in 1:N_test)
     y_test[i] = ordered_logistic_rng(X_test[i] * beta, c);
-    
-  for (i in 1:N_train)
-    yhat[i] = ordered_logistic_rng(X_train[i] * beta, c);
+
 }
