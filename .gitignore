@@ -1,7 +1,11 @@
 .Rproj.user
 .Rhistory
 .RData
+R/
 .Ruserdata
+stan/
+data/stan_data/
+data/clean/
 docs/
 .DS_Store
 probabilistic_programming.Rproj
