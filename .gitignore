@@ -9,3 +9,5 @@ data/clean/
 docs/
 .DS_Store
 probabilistic_programming.Rproj
+python/pymc_modeling.ipynb
+python/pymc3_tutorial.ipynb
