@@ -14,3 +14,4 @@ docs/*md
 docs/latex_files/*
 !docs/latex_files/final_report.pdf
 result_logs/
+graphics/
