@@ -6,8 +6,10 @@ R/
 stan/
 data/stan_data/
 data/clean/
-docs/
 .DS_Store
 probabilistic_programming.Rproj
 python/pymc_modeling.ipynb
 python/pymc3_tutorial.ipynb
+docs/*md
+docs/latex_files/*
+!docs/latex_files/final_report.pdf
