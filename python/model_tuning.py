@@ -8,7 +8,8 @@ from sklearn import model_selection
 df = pd.read_csv("data/processed/wine_data_combined.csv")
 cols_to_adjust = [x for x in df.columns if x not in ["quality", "is_red"]]
 model_path = "saved_models/"
-retrain = True # Set to True and rerun the model gridsearches
+retrain = True# Set to True and rerun the model gridsearches
+short_runtime = False
 
 import multiprocessing
 
@@ -35,13 +36,18 @@ X_train = df_train.drop("quality", axis=1)
 y_train = pd.Categorical(df_train["quality"], ordered=True)
 
 params_xgb = {'max_depth': np.arange(3, 20, 1),
-             'colsample_bytree' : np.arange(0.5, 1, 0.1),
+             'colsample_bytree' : np.arange(0.2, 1, 0.1),
              "learning_rate": np.logspace(-5, -1, 9)}
 
 xgboost = xgb.XGBClassifier()
 xgb_grid_search = model_selection.GridSearchCV(
     xgboost, params_xgb, n_jobs=cores, cv=stratified
 )
+
+if short_runtime:
+    params_xgb = {'max_depth': np.arange(10, 20, 2),
+             'colsample_bytree' : np.arange(0.2, 1, 0.2),
+             "learning_rate": np.logspace(-5, -1, 3)}
 
 if retrain:
     xgb_grid_search.fit(X_train, y_train)
@@ -60,6 +66,11 @@ logistic_grid_search = model_selection.GridSearchCV(
     multi_logistic_reg, params_logistic, n_jobs=cores, cv=stratified
 )
 # Not all of these converge given the low tolerance I set above
+
+
+if short_runtime:
+    params_logistic = {"C": np.logspace(-5, 0, 10), "penalty": ["l1", "l2"]}
+
 if retrain:
     logistic_grid_search.fit(X_train, y_train)
     joblib.dump(logistic_grid_search, "saved_models/logistc_grid_search.joblib")
@@ -68,17 +79,20 @@ logistic_grid_search = joblib.load(f"{model_path}logistc_grid_search.joblib")
 logistic_best_params = LogisticRegression(
     **logistic_grid_search.best_params_, solver="saga", tol=1e-2, max_iter=500
 )
-print(logistic_grid_search.best_params_)
+print("logistc", logistic_grid_search.best_params_)
 models.append(("logistic_reg", logistic_best_params))
 
 support_vector_machine = svm.SVC(gamma='auto',probability=True)
-params_svm = {'C': np.logspace(-3, 3, 100), 'kernel': ['rbf',  'sigmoid']}
+params_svm = {"C": np.logspace(-3, 3, 500)}
 svm_grid_search = model_selection.GridSearchCV(support_vector_machine, params_svm, n_jobs=cores, cv=stratified)
+if short_runtime:
+    params_svm = {"C": np.logspace(-3, 3, 10)}
 
 if retrain:
     svm_grid_search.fit(X_train, y_train)
     joblib.dump(svm_grid_search, f"{model_path}svm_gridsearch.joblib")
-print(svm_grid_search.best_params_)    
+    
+print(svm_grid_search.best_params_)  
 svm_grid_search = joblib.load(f"{model_path}svm_gridsearch.joblib")
 svm_best_params = svm.SVC(**svm_grid_search.best_params_, gamma='auto',probability=True)
 svm_best_params.fit(X_train, y_train)
