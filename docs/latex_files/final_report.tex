@@ -1,0 +1,155 @@
+\documentclass[16pt,twocolumn,letterpaper,titlepage]{article}
+\usepackage{apacite}
+\usepackage{tablefootnote}
+\usepackage{titling}
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{babel}
+\usepackage{array,booktabs}
+
+\usepackage[table]{xcolor}% http://ctan.org/pkg/xcolor
+
+\usepackage{titlesec}% http://ctan.org/pkg/titlesec
+\titleformat{\section}%
+  [hang]% <shape>
+  {\normalfont\bfseries\Large}% <format>
+  {}% <label>
+  {0pt}% <sep>
+  {}% <before code>
+\renewcommand{\thesection}{}% Remove section references...
+\renewcommand{\thesubsection}{\arabic{subsection}}%
+
+\setlength{\droptitle}{-12em}  
+\setlength\bibitemsep{\baselineskip}
+\title{Modeling Wine Quality}
+
+\author{
+    Joseph Despres
+}
+
+\begin{document}
+
+
+\maketitle
+
+
+\onecolumn
+\tableofcontents
+\thispagestyle{empty}
+\newpage
+\twocolumn
+\bibliographystyle{apacite}
+
+\setcounter{page}{1}
+
+\section{Introduction}
+
+% including a summary of the problem, previous
+
+Anyone looking to purchase a bottle of wine will be facing a number of options so large that only possible for a computer to search through. Wine varies signignificantly from region to region. Therefore, this is an ideal problem for machine learning to handle. In particular, this projct aims to speficy a function that maps chemical properties of varies wines to the judges quality scores. This report begins with a dicsussion of the problem followed up by a description of the data. After that, I devote several paragraphs to comparing different feature scaling strategies against logistic regression because there is a significant difference in runtime and performance. After that, I discuss the useof an elastic net regression, XGBoost, and Support Vector Machines in an ensemble to reach a prediction accuracy of . From there, I will go back into the dataset and attempt to improve the model's the accuacy through some more feature engineering. 
+
+\section{Problem Description}
+
+% including a detailed description of the problem you try to address
+This project aims to discover the relationship between wine quality and chemical properties. The motivation for this project is that one purchasing wine seriously must consider different regions, grapes, growing climate, seasons, storage time, and substantial variations in quality and price. This is a vast and complex search space with the potential to find something of significant value. This is a problem well suited to Machine Learning because of the search The benefits of an accurate predictive wine model are that one could select excellent wine at a low price, lower the risk of purchasing low-quality wine, or even determine undervalued wine at auctions. I am not the first person to think of this, hence the published dataset.
+
+\section{Methodology}
+
+To determine the quality score based on chemical properties of a wine we will use a dataset hosted by the University of California Irvines Machine Learning reposotory \cite{Lichman:2013}. These data are from	a study conducted by the portugese governmnt studying the ability to perdict human wine taste \cite{Cortez}. Using support vector machines, they achieve an out of sample accuracy of 0.33. Given this is in 2009, the purpose of this study is to employ a mixture of newer methods and attempt to outperform the publushed by Cortez. First, I do not have the domain knowledge to asses the validity of the data. I have no idea what is an unreasonable level of acidity, for instance. However, given that this is a published dataset, I assuming all the opservatins are actual obeservations.
+
+This is a structured, curated, tabular dataset conviently in First Normal Form. The outcome we wish to predict is the quality as rated by a professional wine judge. One thing that was not obvous from the UCI reposotory is the fact that there are duplicated rows, which means multiple judges rated the same wine the same quality. However, judges were annonomoys in this study, therefore there is no feature indicating this. I will come back to this point after discussign model specifications. There are 11 additional features, which are listed in Table 1.  
+
+\begin{table}[!h]
+
+\caption{Descriptive Statistics}
+\centering
+\begin{tabular}[t]{lrr}
+\toprule
+Feature & Mean & Std\\
+\midrule
+\cellcolor{gray!6}{Fixed Acidity} & \cellcolor{gray!6}{7.215} & \cellcolor{gray!6}{1.296}\\
+Volatile Acidity & 0.340 & 0.165\\
+\cellcolor{gray!6}{Citric Acid} & \cellcolor{gray!6}{0.319} & \cellcolor{gray!6}{0.145}\\
+Residual Sugar & 5.443 & 4.758\\
+\cellcolor{gray!6}{Chlorides} & \cellcolor{gray!6}{0.056} & \cellcolor{gray!6}{0.035}\\
+\addlinespace
+Free Sulfur Dioxide & 30.525 & 17.749\\
+\cellcolor{gray!6}{Total Sulfur Dioxide} & \cellcolor{gray!6}{115.745} & \cellcolor{gray!6}{56.522}\\
+Density & 0.995 & 0.003\\
+\cellcolor{gray!6}{Ph} & \cellcolor{gray!6}{3.219} & \cellcolor{gray!6}{0.161}\\
+Sulphates & 0.531 & 0.149\\
+\addlinespace
+\cellcolor{gray!6}{Alcohol} & \cellcolor{gray!6}{10.492} & \cellcolor{gray!6}{1.193}\\
+Quality & 5.818 & 0.873\\
+\cellcolor{gray!6}{Is Red} & \cellcolor{gray!6}{0.246} & \cellcolor{gray!6}{0.431}\\
+\bottomrule
+\multicolumn{3}{l}{Note: 6497 observations}\\
+\end{tabular}
+\end{table}
+
+After some dificulties with fitting initial models and performance plateaus associated with a min max scaling method. I decided to test and document the results of using several difffernt scaling strategies. I decided to run a 2500 different partitians of training and testing data with a 50\% split to investigatiing the effects diffeerent scaling schemes. There was a significant difference in results as well as runtime. This is due to the design matricies haveing dificulties inverting. The runtimes will differ based on packages, hardware and datasets so I don't list them.  
+
+
+\begin{table}[!h]
+
+\caption{Demo table}
+\centering
+\begin{tabular}[t]{lrrr}
+\toprule
+Scaling Method & Mean & Std & Median\\
+\midrule
+\cellcolor{gray!6}{No Transformation} & \cellcolor{gray!6}{0.590} & \cellcolor{gray!6}{0.024} & \cellcolor{gray!6}{0.592}\\
+Dropped Outliers & 0.645 & 0.026 & 0.641\\
+\cellcolor{gray!6}{Min Max Scale} & \cellcolor{gray!6}{0.690} & \cellcolor{gray!6}{0.018} & \cellcolor{gray!6}{0.691}\\
+Rescaled to Uniform & 0.707 & 0.015 & 0.707\\
+\cellcolor{gray!6}{Standard Scale} & \cellcolor{gray!6}{0.726} & \cellcolor{gray!6}{0.017} & \cellcolor{gray!6}{0.725}\\
+\addlinespace
+Yao Johnson Transform & 0.733 & 0.015 & 0.732\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Yao-Johnson outperforms the Standard scaling methods however, not by much and is a far more complicated transformation process. It is a Box-Cox transformation mathod modifed to take values less than 0. The Box-Cox Method is for linearizing vectors by some exponent that will convert the variable to a linear scale. I do not see any indication that wine chemical properties are anything other than linear in practice. My reasioning for this is that one does not add an exponentially increasing or decreasing amoutn of sugar for instance. Therefore, I will use the standard scaler.
+
+\begin{figure}[!htb]
+	\center{\includegraphics[width=\columnwidth]
+        {plots/auc_comparasent.png}}
+	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformationf}
+\end{figure}
+
+
+the target is wine quality. 
+
+\begin{figure}[!htb]
+	\center{\includegraphics[width=\columnwidth]
+        {plots/target.png}}
+	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformationf}
+\end{figure}
+
+
+
+%  including a detailed description of methods used
+
+\section{Results}
+
+% including a detailed description of your observations from the experiments
+
+\section{Conclusions}
+
+% including a brief summary of the main contributions of the project and the lessons you learn from the project, as well as a list of some potential future work.
+
+\clearpage
+\onecolumn
+
+\bibliography{References}
+
+\section{Appendix}
+
+\begin{figure}[!htb]
+	\center{\includegraphics[width=\columnwidth]
+        {plots/transformations.png}}
+	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformation}
+	
+\end{figure}
+
+\end{document}
