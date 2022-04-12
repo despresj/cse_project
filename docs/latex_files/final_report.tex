@@ -21,7 +21,7 @@
 
 \setlength{\droptitle}{-12em}  
 \setlength\bibitemsep{\baselineskip}
-\title{Modeling Wine Quality}
+\title{Machine Learning Methods to Predict Wine Quality}
 
 \author{
     Joseph Despres
@@ -46,7 +46,7 @@
 
 % including a summary of the problem, previous
 
-Anyone looking to purchase a bottle of wine will be facing a number of options so large that only possible for a computer to search through. Wine varies signignificantly from region to region. Therefore, this is an ideal problem for machine learning to handle. In particular, this projct aims to speficy a function that maps chemical properties of varies wines to the judges quality scores. This report begins with a dicsussion of the problem followed up by a description of the data. After that, I devote several paragraphs to comparing different feature scaling strategies against logistic regression because there is a significant difference in runtime and performance. After that, I discuss the useof an elastic net regression, XGBoost, and Support Vector Machines in an ensemble to reach a prediction accuracy of . From there, I will go back into the dataset and attempt to improve the model's the accuacy through some more feature engineering. 
+Anyone looking to purchase a bottle of wine will be facing a number of options so large that only possible for a computer to search through. Wine varies signignificantly from region to region. Therefore, this is an ideal problem for machine learning to handle. In particular, this projct aims to speficy a function that maps chemical properties of varies wines to the judges quality scores. This report begins with a dicsussion of the problem followed up by a description of the data. To model I use the sklearn package \cite{pedregosa2011scikit} in the Python Programming Language \cite{10.5555/1593511}. After that, I devote several paragraphs to comparing different feature scaling strategies against logistic regression because there is a significant difference in runtime and performance. After that, I discuss the useof an elastic net regression, XGBoost, and Support Vector Machines in an ensemble to reach a prediction accuracy of . From there, I will go back into the dataset and attempt to improve the model's the accuacy through some more feature engineering. 
 
 \section{Problem Description}
 
@@ -87,9 +87,19 @@ Quality & 5.818 & 0.873\\
 \end{tabular}
 \end{table}
 
-After some dificulties with fitting initial models and performance plateaus associated with a min max scaling method. I decided to test and document the results of using several difffernt scaling strategies. I decided to run a 2500 different partitians of training and testing data with a 50\% split to investigatiing the effects diffeerent scaling schemes. There was a significant difference in results as well as runtime. This is due to the design matricies haveing dificulties inverting. The runtimes will differ based on packages, hardware and datasets so I don't list them.  
 
 
+the target is wine quality as scored by a professional judge. Wine quality is an ordinal categorical variable. The class assigments is quire unballanced. However, the nature of this problem is that very few wines will be of very high quality and many will be average. See Figure 2 for a plot of the class distributions. At this point, I will split the data and stash 30\% of the data to reserve for testing and I will not touch those data until it is time to report a final result.
+
+\begin{figure}[!htb]
+	\center{\includegraphics[width=\columnwidth]
+        {plots/target.png}}
+	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformationf}
+\end{figure}
+
+After some dificulties with fitting initial models and performance plateaus associated with the min max scaling method. I decided to test and document the results of using several difffernt scaling strategies. I decided to run a 2,500 different partitians of training and testing data with a 50\% split to investigatiing the effects diffeerent scaling schemes. There was a significant difference in results as well as runtime. This is due to the design matricies haveing dificulties inverting. The runtimes will differ based on packages, hardware and datasets so I don't list them.  
+
+This paper will consider two performance metrics. First accuracy measured as the percentage of correct predictions. Note, this is an unballanced assignment problem, accuracy should not be compared to the number of classes rather the frequency of the most frequent class. The most freqent class is a quality score of 6. Which occurs in about 43\% of the observations. This This metric is intuitive, but does not capture our true intentions. I will also use a ballance between precision and recall known as AUC. AUC is simply the area under the ROC cuve.
 \begin{table}[!h]
 
 \caption{Demo table}
@@ -109,33 +119,35 @@ Yao Johnson Transform & 0.733 & 0.015 & 0.732\\
 \end{tabular}
 \end{table}
 
-The Yao-Johnson outperforms the Standard scaling methods however, not by much and is a far more complicated transformation process. It is a Box-Cox transformation mathod modifed to take values less than 0. The Box-Cox Method is for linearizing vectors by some exponent that will convert the variable to a linear scale. I do not see any indication that wine chemical properties are anything other than linear in practice. My reasioning for this is that one does not add an exponentially increasing or decreasing amoutn of sugar for instance. Therefore, I will use the standard scaler.
+The Yao-Johnson outperforms the Standard scaling methods however, not by much and is a far more complicated transformation process. It is a Box-Cox transformation mathod modifed to take values less than 0. The Box-Cox Method is for linearizing vectors by some exponent that will convert the variable to a linear scale. I do not see any indication that wine chemical properties are anything other than linear in practice. My reasioning for this is that one does not add an exponentially increasing or decreasing amoutn of sugar for instance. Although it has slightly better accuarcy and lower standard deviation, both are desireable properties, The invrease did not justify the additioal complexity and a deviation from what I felt is reasionable. Therefore, I will use the standard scaler.
 
 \begin{figure}[!htb]
 	\center{\includegraphics[width=\columnwidth]
         {plots/auc_comparasent.png}}
 	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformationf}
 \end{figure}
+ 
+After studying the features and exploratory plotting, we are now ready to specify the models. The plan is to use an ensemble of models to predict wine quality. The idea is that a collection of viting classifiers will be more accurate than a single one. The reasioning is that one model could be wrong in many ways however it would be correct in only one. Add a collection together and they will be collectively right more than wrong.
 
 
-the target is wine quality. 
+The first model is the multinomeal logistic regression used during the feature scaling trials. This model is model is based on estimating the cumulative log odds of belonging to a given category based on the features. I add some regularization parameers $L^1$ and $L^2$ norms. commonly refered to as elastic net regression. A gridsearch over a five fold cross valudation shows that an optimal $L^1 = 0.0315$ and $L^2 = 0.013$. This achieves a training set accuarcy of 54.53\% and and AUC of 0.775. These are not impressive results, so we will fit a Support Vector Machines. 
 
-\begin{figure}[!htb]
-	\center{\includegraphics[width=\columnwidth]
-        {plots/target.png}}
-	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformationf}
-\end{figure}
+A support vector machine model aims to find the maximimum margin hyperplane between featurs that seperate points. I use the radial basis function kernal and tune only the regularization parameter squared $L^2$ norm. After crossvalidating I find the best regularization parameter to be 6.58. This reaches an insample accuracy of 60\% and an AUC of 0.801. A slight improvement. 
 
+After that I use XGBoost \{Chen:2016:XST:2939672.2939785} an effecient implimentation of gradent boosted trees. There are many parameters to search through, however I will only tune max tree depth, column sample by tree, and learning rate. After tuning, I found column sample to be 50\% to be the best a learning rate of about 0.034 and a max depth of 13. These yield an astonishing in sample accuracy of 99.5\% and an AUC of 0.998. This a substantial improvement over the past two models. From here I will wrap all three in an ensemble. Test the accuaracy. Given these matrics, it may be  better to not even ensmemble and just use XGBoost. 
 
+Then I save these models and wrap them into one ensemble model. Then fit that to the training data and compare different approaches. I want to reengineer some features and report some results. 
 
 %  including a detailed description of methods used
 
 \section{Results}
 
+The XGBoost model wildly outperforms the linear I found it has an accuacy of the final testing set of __. The ensemble. The model perdictions are in Figure . This shows that the model could be used to 
 % including a detailed description of your observations from the experiments
 
 \section{Conclusions}
 
+The main take-away of this stuyd 
 % including a brief summary of the main contributions of the project and the lessons you learn from the project, as well as a list of some potential future work.
 
 \clearpage
