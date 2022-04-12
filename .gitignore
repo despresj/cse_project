@@ -13,6 +13,7 @@ python/pymc3_tutorial.ipynb
 docs/*md
 docs/latex_files/*
 !docs/latex_files/final_report.pdf
+!docs/latex_files/final_report.tex
 result_logs/
 saved_models/
 .vscode
