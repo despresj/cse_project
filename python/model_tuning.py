@@ -1,3 +1,5 @@
+import time
+start = time.time()
 import pandas as pd
 import numpy as np
 import joblib
@@ -32,9 +34,9 @@ df_train = pd.DataFrame(df_transform.fit_transform(df_train), columns=df.columns
 X_train = df_train.drop("quality", axis=1)
 y_train = pd.Categorical(df_train["quality"], ordered=True)
 
-params_xgb = {'max_depth': np.arange(3, 20, 2),
+params_xgb = {'max_depth': np.arange(3, 20, 1),
              'colsample_bytree' : np.arange(0.5, 1, 0.1),
-             "learning_rate": np.logspace(-5, -1, 5)}
+             "learning_rate": np.logspace(-5, -1, 9)}
 
 xgboost = xgb.XGBClassifier()
 xgb_grid_search = model_selection.GridSearchCV(
@@ -49,7 +51,7 @@ xgb_grid_search = joblib.load(f"{model_path}xgb_grid_search.joblib")
 xgb_best_params = xgb.XGBClassifier(**xgb_grid_search.best_params_, probability=True)
 models = []
 models.append(("xgb", xgb_best_params))
-
+print(xgb_grid_search.best_params_)
 multi_logistic_reg = LogisticRegression(solver="saga", tol=1e-2, max_iter=500)
 
 params_logistic = {"C": np.logspace(-5, 0, 100), "penalty": ["l1", "l2"]}
@@ -66,15 +68,17 @@ logistic_grid_search = joblib.load(f"{model_path}logistc_grid_search.joblib")
 logistic_best_params = LogisticRegression(
     **logistic_grid_search.best_params_, solver="saga", tol=1e-2, max_iter=500
 )
+print(logistic_grid_search.best_params_)
 models.append(("logistic_reg", logistic_best_params))
 
 support_vector_machine = svm.SVC(gamma='auto',probability=True)
-params_svm = {'C': np.logspace(-3, 3, 10), 'kernel': ['rbf',  'sigmoid']}
+params_svm = {'C': np.logspace(-3, 3, 100), 'kernel': ['rbf',  'sigmoid']}
 svm_grid_search = model_selection.GridSearchCV(support_vector_machine, params_svm, n_jobs=cores, cv=stratified)
+
 if retrain:
     svm_grid_search.fit(X_train, y_train)
     joblib.dump(svm_grid_search, f"{model_path}svm_gridsearch.joblib")
-    
+print(svm_grid_search.best_params_)    
 svm_grid_search = joblib.load(f"{model_path}svm_gridsearch.joblib")
 svm_best_params = svm.SVC(**svm_grid_search.best_params_, gamma='auto',probability=True)
 svm_best_params.fit(X_train, y_train)
@@ -97,4 +101,6 @@ if retrain:
     pipeline = Pipeline([("scaler", df_transform), ("ensemble", ensemble)])
     pipeline.fit(X_train, y_train)
     joblib.dump(pipeline, f"{model_path}pipeline.joblib")
-    
+
+end = time.time()
+print(f"runtime {(end - start)/60}")    
