@@ -1,17 +1,16 @@
 import time
-start = time.time()
 import pandas as pd
 import numpy as np
 import joblib
+import multiprocessing
 from sklearn import model_selection
 
+start = time.time()
 df = pd.read_csv("data/processed/wine_data_combined.csv")
 cols_to_adjust = [x for x in df.columns if x not in ["quality", "is_red"]]
 model_path = "saved_models/"
-retrain = True# Set to True and rerun the model gridsearches
-short_runtime = False
-
-import multiprocessing
+retrain = True # Set to True and rerun the model gridsearches
+short_runtime = False # Set to true for a narrow hyperparam search
 
 cores = multiprocessing.cpu_count()
 
