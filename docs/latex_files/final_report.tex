@@ -134,7 +134,7 @@ The first model is the multinomeal logistic regression used during the feature s
 
 A support vector machine model aims to find the maximimum margin hyperplane between featurs that seperate points. I use the radial basis function kernal and tune only the regularization parameter squared $L^2$ norm. After crossvalidating I find the best regularization parameter to be 6.58. This reaches an insample accuracy of 60\% and an AUC of 0.801. A slight improvement. 
 
-After that I use XGBoost \{Chen:2016:XST:2939672.2939785} an effecient implimentation of gradent boosted trees. There are many parameters to search through, however I will only tune max tree depth, column sample by tree, and learning rate. After tuning, I found column sample to be 50\% to be the best a learning rate of about 0.034 and a max depth of 13. These yield an astonishing in sample accuracy of 99.5\% and an AUC of 0.998. This a substantial improvement over the past two models. From here I will wrap all three in an ensemble. Test the accuaracy. Given these matrics, it may be  better to not even ensmemble and just use XGBoost. 
+After that I use XGBoost \cite{Chen2016} an effecient implimentation of gradent boosted trees. There are many parameters to search through, however I will only tune max tree depth, column sample by tree, and learning rate. After tuning, I found column sample to be 50\% to be the best a learning rate of about 0.034 and a max depth of 13. These yield an astonishing in sample accuracy of 99.5\% and an AUC of 0.998. This a substantial improvement over the past two models. From here I will wrap all three in an ensemble. Test the accuaracy. Given these matrics, it may be  better to not even ensmemble and just use XGBoost. 
 
 Then I save these models and wrap them into one ensemble model. Then fit that to the training data and compare different approaches. I want to reengineer some features and report some results. 
 
@@ -142,7 +142,7 @@ Then I save these models and wrap them into one ensemble model. Then fit that to
 
 \section{Results}
 
-The XGBoost model wildly outperforms the linear I found it has an accuacy of the final testing set of __. The ensemble. The model perdictions are in Figure . This shows that the model could be used to 
+The XGBoost model wildly outperforms the linear I found it has an accuacy of the final testing set of. The ensemble. The model perdictions are in Figure . This shows that the model could be used to 
 % including a detailed description of your observations from the experiments
 
 \section{Conclusions}
