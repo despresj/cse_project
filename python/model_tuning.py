@@ -8,9 +8,10 @@ from sklearn import model_selection
 start = time.time()
 df = pd.read_csv("data/processed/wine_data_combined.csv")
 cols_to_adjust = [x for x in df.columns if x not in ["quality", "is_red"]]
-model_path = "saved_models/"
 retrain = True # Set to True and rerun the model gridsearches
 short_runtime = False # Set to true for a narrow hyperparam search
+
+model_path = "short_run_params" if short_runtime else "saved_models/"
 
 cores = multiprocessing.cpu_count()
 
@@ -44,9 +45,9 @@ xgb_grid_search = model_selection.GridSearchCV(
 )
 
 if short_runtime:
-    params_xgb = {'max_depth': np.arange(10, 20, 2),
-             'colsample_bytree' : np.arange(0.2, 1, 0.2),
-             "learning_rate": np.logspace(-5, -1, 3)}
+    params_xgb = {'max_depth': np.arange(13, 13, 1),
+             'colsample_bytree' : np.arange(0.5, 0.7, 0.2),
+             "learning_rate": np.logspace(-4, -3, 1)}
 
 if retrain:
     xgb_grid_search.fit(X_train, y_train)
@@ -62,10 +63,8 @@ multi_logistic_reg = LogisticRegression(solver="saga", tol=1e-2, max_iter=500)
 params_logistic = {"C": np.logspace(-5, 0, 100), "penalty": ["l1", "l2"]}
 
 logistic_grid_search = model_selection.GridSearchCV(
-    multi_logistic_reg, params_logistic, n_jobs=cores, cv=stratified
-)
+    multi_logistic_reg, params_logistic, n_jobs=cores, cv=stratified)
 # Not all of these converge given the low tolerance I set above
-
 
 if short_runtime:
     params_logistic = {"C": np.logspace(-5, 0, 10), "penalty": ["l1", "l2"]}
@@ -114,6 +113,10 @@ if retrain:
     pipeline = Pipeline([("scaler", df_transform), ("ensemble", ensemble)])
     pipeline.fit(X_train, y_train)
     joblib.dump(pipeline, f"{model_path}pipeline.joblib")
-
+from sklearn import metrics
 end = time.time()
-print(f"runtime {(end - start)/60}")    
+print(f"runtime {(end - start)/60}")  
+yhat = pipeline.predict_proba(X_train)
+auc = metrics.roc_auc_score(y_train, yhat, multi_class='ovr')
+print("accuracy",np.sum(pipeline.predict(X_train) == y_train)/len(y_train))
+print("auc", auc)
