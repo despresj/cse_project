@@ -17,3 +17,4 @@ docs/latex_files/*
 result_logs/
 saved_models/
 .vscode
+short_run_params/
