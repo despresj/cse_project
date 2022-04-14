@@ -46,18 +46,19 @@
 
 % including a summary of the problem, previous
 
-Anyone looking to purchase a bottle of wine will be facing a number of options so large that only possible for a computer to search through. Wine varies signignificantly from region to region. Therefore, this is an ideal problem for machine learning to handle. In particular, this projct aims to speficy a function that maps chemical properties of varies wines to the judges quality scores. This report begins with a dicsussion of the problem followed up by a description of the data. To model I use the sklearn package \cite{pedregosa2011scikit} in the Python Programming Language \cite{10.5555/1593511}. After that, I devote several paragraphs to comparing different feature scaling strategies against logistic regression because there is a significant difference in runtime and performance. After that, I discuss the useof an elastic net regression, XGBoost, and Support Vector Machines in an ensemble to reach a prediction accuracy of . From there, I will go back into the dataset and attempt to improve the model's the accuacy through some more feature engineering. 
+Anyone looking to purchase a bottle of wine will be facing a search space so large that only possible for a computer to search through. Wine varies significantly from region to region. Therefore, this is an ideal problem for machine learning to handle. In particular, this project aims to specify a function that maps the chemical properties of various wines to the judge's quality scores. This report begins with a problem description followed by a description of the data. I use the Sklearn package \cite{scikit-learn} in the Python Programming Language \cite{10.5555/1593511}. After that, I devote several paragraphs to comparing different feature scaling strategies against logistic regression because there is a significant difference in runtime and performance. After that, I discuss the modeling techniques, elastic net regression, XGBoost, and Support Vector Machines in an ensemble to reach a training set prediction accuracy of 69%. After that, I go back into the dataset and attempt to improve the model's accuracy through some more feature engineering. Finally, test the model on the testing set and achieve a final accuracy of 69%.
 
 \section{Problem Description}
 
 % including a detailed description of the problem you try to address
-This project aims to discover the relationship between wine quality and chemical properties. The motivation for this project is that one purchasing wine seriously must consider different regions, grapes, growing climate, seasons, storage time, and substantial variations in quality and price. This is a vast and complex search space with the potential to find something of significant value. This is a problem well suited to Machine Learning because of the search The benefits of an accurate predictive wine model are that one could select excellent wine at a low price, lower the risk of purchasing low-quality wine, or even determine undervalued wine at auctions. I am not the first person to think of this, hence the published dataset.
 
-\section{Methodology}
+This project aims to discover the relationship between wine quality and chemical properties. The motivation for this project is that one purchasing wine seriously must consider different regions, grapes, growing climate, seasons, storage time, and substantial variations in quality and price. This is a problem well suited to Machine Learning because of the vast and complex search space. The benefits of an accurate predictive wine model are that one could select excellent wine at a low price, this lowers the risk of purchasing low-quality wine, or even determining undervalued wine at auctions.
 
-To determine the quality score based on chemical properties of a wine we will use a dataset hosted by the University of California Irvines Machine Learning reposotory \cite{Lichman:2013}. These data are from	a study conducted by the portugese governmnt studying the ability to perdict human wine taste \cite{Cortez}. Using support vector machines, they achieve an out of sample accuracy of 0.33. Given this is in 2009, the purpose of this study is to employ a mixture of newer methods and attempt to outperform the publushed by Cortez. First, I do not have the domain knowledge to asses the validity of the data. I have no idea what is an unreasonable level of acidity, for instance. However, given that this is a published dataset, I assuming all the opservatins are actual obeservations.
+\section{Data}
 
-This is a structured, curated, tabular dataset conviently in First Normal Form. The outcome we wish to predict is the quality as rated by a professional wine judge. One thing that was not obvous from the UCI reposotory is the fact that there are duplicated rows, which means multiple judges rated the same wine the same quality. However, judges were annonomoys in this study, therefore there is no feature indicating this. I will come back to this point after discussign model specifications. There are 11 additional features, which are listed in Table 1.  
+To determine the quality score based on the distinct chemical properties of different wines, we will use a dataset hosted by the University of California Irvine's Machine Learning repository \cite{Lichman:2013}. These data are from	a study conducted by the Portuguese government studying a data mining approach to predicting human wine taste \cite{Cortez}. Using support vector machines, they achieve an out-of-sample accuracy of 33%. Given this is in 2009, the purpose of this study is to employ a mixture of newer methods and attempt to outperform the published by Cortez. First, I do not have the domain knowledge to assess the validity of the data\footnote{I abandoned the Bayesian methods in my proposal because I do not have the expertise to set informative priors. Without informative priors, the model performance is similar to classical Machine Learning methods.}. I have no idea what is an unreasonable level of acidity, for instance. However, given that this is a published dataset, I assume all the observations are actual observations and not measurement errors.
+
+This is a structured, curated, tabular dataset conveniently in first normal form. The outcome we wish to predict is the quality as rated by a professional wine judge. One thing that was not obvious from the UCI repository is the fact that there are duplicated rows, which means multiple judges rated the same wine as the same quality. Judges are anonymous in these data, therefore there are no features indicating which judge is scoring. I will come back to this point after discussing model specifications. There are 11 additional features, which are listed in Table 1.  
 
 \begin{table}[!h]
 
@@ -89,17 +90,18 @@ Quality & 5.818 & 0.873\\
 
 
 
-the target is wine quality as scored by a professional judge. Wine quality is an ordinal categorical variable. The class assigments is quire unballanced. However, the nature of this problem is that very few wines will be of very high quality and many will be average. See Figure 2 for a plot of the class distributions. At this point, I will split the data and stash 30\% of the data to reserve for testing and I will not touch those data until it is time to report a final result.
+the target is wine quality as scored by a professional judge. Wine quality is an ordinal categorical variable. The class assignments are significantly unbalanced. However, the nature of this problem is that very few wines will be of very high quality and many will be average. See Figure 2 for a plot of the class distributions. Note that only 5 of 6,497 of these wines are rated 9/10. This may necessitate some re-sampling methods because the most valuable model will be able to detect high-quality wine. We have no examples of a 10, a 1, or a 2. At this point, I will split the data and stash 30\% of the data to reserve for testing and I will not touch those data until it is time to report a final result.
 
 \begin{figure}[!htb]
 	\center{\includegraphics[width=\columnwidth]
         {plots/target.png}}
-	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformationf}
+	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformation}
 \end{figure}
 
-After some dificulties with fitting initial models and performance plateaus associated with the min max scaling method. I decided to test and document the results of using several difffernt scaling strategies. I decided to run a 2,500 different partitians of training and testing data with a 50\% split to investigatiing the effects diffeerent scaling schemes. There was a significant difference in results as well as runtime. This is due to the design matricies haveing dificulties inverting. The runtimes will differ based on packages, hardware and datasets so I don't list them.  
+\section{Methodology}
+After some difficulties with fitting initial models and performance plateaus associated with the Min-max Scaling method. I decided to test and document the results of using several different scaling strategies. I decided to run 2,500 different partitions of training and validation data with a 50\% split from the training data. To investigate the effects of different scaling schemes. There was a significant difference in results as well as runtime. This is due to the design matrices having difficulties inverting. The runtimes will differ based on the model, software implementation, hardware, and datasets so I don't list them.  
 
-This paper will consider two performance metrics. First accuracy measured as the percentage of correct predictions. Note, this is an unballanced assignment problem, accuracy should not be compared to the number of classes rather the frequency of the most frequent class. The most freqent class is a quality score of 6. Which occurs in about 43\% of the observations. This This metric is intuitive, but does not capture our true intentions. I will also use a ballance between precision and recall known as AUC. AUC is simply the area under the ROC cuve.
+This paper will consider two performance metrics. The first accuracy is measured as the percentage of correct predictions. Note, this is an unbalanced assignment problem, accuracy should not be compared to the number of classes but rather the frequency of the most frequent class. The most frequent class is a quality score of 6. Which occurs in about 43\% of the observations. This metric is intuitive but does not capture our true intentions. I will also use a balance between precision and recall known as AUC. AUC is simply the area under the ROC curve.
 \begin{table}[!h]
 
 \caption{Demo table}
@@ -119,7 +121,7 @@ Yao Johnson Transform & 0.733 & 0.015 & 0.732\\
 \end{tabular}
 \end{table}
 
-The Yao-Johnson outperforms the Standard scaling methods however, not by much and is a far more complicated transformation process. It is a Box-Cox transformation mathod modifed to take values less than 0. The Box-Cox Method is for linearizing vectors by some exponent that will convert the variable to a linear scale. I do not see any indication that wine chemical properties are anything other than linear in practice. My reasioning for this is that one does not add an exponentially increasing or decreasing amoutn of sugar for instance. Although it has slightly better accuarcy and lower standard deviation, both are desireable properties, The invrease did not justify the additioal complexity and a deviation from what I felt is reasionable. Therefore, I will use the standard scaler.
+The Yao-Johnson outperforms the Standard scaling methods, however, not by much and is a far more complicated transformation process. It is a Box-Cox transformation method modified to take values less than 0. The Box-Cox Method is for linearizing vectors by some exponent that will convert the variable to a linear scale. I do not see any indication that wine's chemical properties are anything other than linear in practice. My reasoning for this is that one does not add an exponentially increasing or decreasing amount of sugar for instance. Although it has slightly better accuracy and lower standard deviation, both are desirable properties, the increase in performance did not justify the additional complexity and a deviation from what I felt is reasonable. Therefore, I will use the standard scaler.
 
 \begin{figure}[!htb]
 	\center{\includegraphics[width=\columnwidth]
@@ -127,28 +129,28 @@ The Yao-Johnson outperforms the Standard scaling methods however, not by much an
 	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformationf}
 \end{figure}
  
-After studying the features and exploratory plotting, we are now ready to specify the models. The plan is to use an ensemble of models to predict wine quality. The idea is that a collection of viting classifiers will be more accurate than a single one. The reasioning is that one model could be wrong in many ways however it would be correct in only one. Add a collection together and they will be collectively right more than wrong.
+After studying the features and exploratory plotting, we are now ready to specify the models. The plan is to use an ensemble of models to predict wine quality. The idea is that a collection of visiting classifiers will be more accurate than a single one. The reasoning is that one model could be wrong in many ways however it would be correct in only one. Add a collection together and they will be collected right more than wrong.
 
 
-The first model is the multinomeal logistic regression used during the feature scaling trials. This model is model is based on estimating the cumulative log odds of belonging to a given category based on the features. I add some regularization parameers $L^1$ and $L^2$ norms. commonly refered to as elastic net regression. A gridsearch over a five fold cross valudation shows that an optimal $L^1 = 0.0315$ and $L^2 = 0.013$. This achieves a training set accuarcy of 54.53\% and and AUC of 0.775. These are not impressive results, so we will fit a Support Vector Machines. 
+The first model is the multinomial logistic regression used during the feature scaling trials. This model is based on estimating the cumulative log odds of belonging to a given category based on the features. I add some regularization parameters $L^1$ and $L^2$ norms. commonly referred to as elastic net regression. A grid-search over a five-fold cross-validation shows that an optimal $L^1 = 0.0315$ and $L^2 = 0.013$. This achieves a training set accuracy of 54.53\% and an AUC of 0.775. These are not impressive results, so we will fit a Support Vector Machines. 
 
-A support vector machine model aims to find the maximimum margin hyperplane between featurs that seperate points. I use the radial basis function kernal and tune only the regularization parameter squared $L^2$ norm. After crossvalidating I find the best regularization parameter to be 6.58. This reaches an insample accuracy of 60\% and an AUC of 0.801. A slight improvement. 
+A support vector machine model aims to find the maximum margin hyperplane between features that separate points. I use the radial basis function kernel and tune only the regularization parameter squared $L^2$ norm. After cross-validating I find the best regularization parameter to be 6.58. This reaches an in-sample accuracy of 60\% and an AUC of 0.801. A slight improvement. 
 
-After that I use XGBoost \cite{Chen2016} an effecient implimentation of gradent boosted trees. There are many parameters to search through, however I will only tune max tree depth, column sample by tree, and learning rate. After tuning, I found column sample to be 50\% to be the best a learning rate of about 0.034 and a max depth of 13. These yield an astonishing in sample accuracy of 99.5\% and an AUC of 0.998. This a substantial improvement over the past two models. From here I will wrap all three in an ensemble. Test the accuaracy. Given these matrics, it may be  better to not even ensmemble and just use XGBoost. 
+After that, I use XGBoost \cite{Chen2016} an efficient implementation of gradient boosted trees. There are many parameters to search through, however, I will only tune max tree depth, column sample by tree, and learning rate. After tuning, I found the column sample to be 50\% to be the best a learning rate of about 0.034 and a max depth of 13. This yields an astonishing sample accuracy of 99.5\% and an AUC of 0.998. This is a substantial improvement over the past two models. From here, I will wrap all three in an ensemble and test the accuracy. Given these metrics, it may be better to not even ensemble and just use XGBoost. 
 
-Then I save these models and wrap them into one ensemble model. Then fit that to the training data and compare different approaches. I want to reengineer some features and report some results. 
+Then I save these models and wrap them into one ensemble model. Then fit that to the training data and compare different approaches. I want to re-engineer some features and report some results. 
 
 %  including a detailed description of methods used
 
 \section{Results}
 
-The XGBoost model wildly outperforms the linear I found it has an accuacy of the final testing set of. The ensemble. The model perdictions are in Figure . This shows that the model could be used to 
+The XGBoost model wildly outperforms the linear I found it has an accuracy of the final testing set. The ensemble. The model predictions are in Figure. This shows that the model could be used to 
 % including a detailed description of your observations from the experiments
 
 \section{Conclusions}
 
-The main take-away of this stuyd 
-% including a brief summary of the main contributions of the project and the lessons you learn from the project, as well as a list of some potential future work.
+The main takeaway of this study 
+% including a summary of the main contributions of the project and the lessons you learn from the project, as well as a list of some potential future work.
 
 \clearpage
 \onecolumn
@@ -160,8 +162,9 @@ The main take-away of this stuyd
 \begin{figure}[!htb]
 	\center{\includegraphics[width=\columnwidth]
         {plots/transformations.png}}
-	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformation}
+	\caption{\label{fig:my-label} Comparing Re-sampled Prediction Accuracy by Transformation}
 	
 \end{figure}
 
 \end{document}
+
