@@ -67,7 +67,7 @@ df %>%
   labs(x = "Area under the ROC Curve", y = "Samples") +
   theme_minimal() 
 
-ggsave("graphics/plots/auc_comparasent.png", width = 16, height = 9)
+# ggsave("graphics/plots/auc_comparasent.png", width = 16, height = 9)
 
 ordered_names <-  df %>% 
   summarise(across(.fns = mean)) %>% 
@@ -91,7 +91,7 @@ df %>%
    theme_apa() 
   
 
-ggsave("docs/latex_files/plots/auc_comparasent.png", width = 2.8, height = 6)
+# ggsave("docs/latex_files/plots/auc_comparasent.png", width = 2.8, height = 6)
 
 training %>% 
   map_df(~(.x - mean(.x))/ sd(.x)) %>% 
@@ -112,7 +112,7 @@ training %>%
   theme(text=element_text(family="Times New Roman", size = 12)) +
   theme(legend.position = "bottom")
 
-ggsave("docs/latex_files/plots/transformations.png", width = 7.5, height = 8)
+# ggsave("docs/latex_files/plots/transformations.png", width = 7.5, height = 8)
 
 plot_data <- read_csv("data/processed/wine_data_combined.csv") %>%
   group_by(quality) %>% 
@@ -131,4 +131,4 @@ plot_data %>%
   theme(text=element_text(family="Times New Roman", size = 12)) +
   theme(legend.position = "bottom")
 
-ggsave("docs/latex_files/plots/target.png", width = 3, height = 3)
+# ggsave("docs/latex_files/plots/target.png", width = 3, height = 3)
