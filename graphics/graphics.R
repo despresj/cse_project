@@ -72,13 +72,14 @@ ggsave("graphics/plots/auc_comparasent.png", width = 16, height = 9)
 ordered_names <-  df %>% 
   summarise(across(.fns = mean)) %>% 
   pivot_longer(cols = everything()) %>% 
-  arrange(desc(value)) %>% 
+  arrange((value)) %>% 
   pull(name)
 
 mean_auc <- df %>% 
   pivot_longer(cols = everything(), names_to = "scaling_method", values_to = "auc") %>% 
   summarise(mean_auc = mean(auc)) %>% 
   pull(mean_auc)
+
 df %>% 
   pivot_longer(cols = everything(), names_to = "scaling_method", values_to = "auc") %>% 
    mutate(scaling_method = factor(scaling_method, ordered_names)) %>% 
@@ -86,11 +87,11 @@ df %>%
    geom_histogram(bins = 100, color = "black", fill = "black") +
    geom_vline(xintercept = mean_auc, linetype = "dashed") +
    facet_wrap(~scaling_method, ncol = 1) +
-   labs(x = "Area under the ROC Curve", y = "Samples") +
-   theme_apa() +
-  theme(text=element_text(family="Times New Roman", size=10))
+   labs(x = "Area under the ROC Curve (AUC)", y = NULL) +
+   theme_apa() 
+  
 
-ggsave("docs/latex_files/plots/auc_comparasent.png", width = 3, height = 6.5)
+ggsave("docs/latex_files/plots/auc_comparasent.png", width = 2.8, height = 6)
 
 training %>% 
   map_df(~(.x - mean(.x))/ sd(.x)) %>% 
@@ -108,7 +109,7 @@ training %>%
   labs(color = "", x = "Value", y = "Count") +
   theme_bw(base_size = 20) +
   theme_apa() +
-  theme(text=element_text(family="Times New Roman", size = 8)) +
+  theme(text=element_text(family="Times New Roman", size = 12)) +
   theme(legend.position = "bottom")
 
 ggsave("docs/latex_files/plots/transformations.png", width = 7.5, height = 8)
@@ -127,7 +128,7 @@ plot_data %>%
   theme_apa() +
   scale_x_discrete(breaks = 3:9) +
   scale_y_continuous(labels = comma) +
-  theme(text=element_text(family="Times New Roman", size = 8)) +
+  theme(text=element_text(family="Times New Roman", size = 12)) +
   theme(legend.position = "bottom")
 
 ggsave("docs/latex_files/plots/target.png", width = 3, height = 3)
