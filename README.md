@@ -1,5 +1,4 @@
-# Probabilistic Programming and Bayesian Machine Learning
-This is a project using bayesian methods to improve out of sample predictions.
+# Comparing two datasets power to predict wine quality
 
 ## Benchmarks and Timeline
 - [x]  Mar-13: Data preprocessed and modeling prepared 
@@ -8,6 +7,6 @@ This is a project using bayesian methods to improve out of sample predictions.
 - [x]  Mar-27: Outline code models
 - [x]  Apr-03: Improve models
 - [x]  Apr-10: Written draft of the report
-- [ ]  Apr-17: Revise draft and prepare slide deck
+- [x]  Apr-17: Revise draft and prepare slide deck
 - [ ]  Apr-24: revisions Edits and tweeking models 
 
