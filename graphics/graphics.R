@@ -2,8 +2,90 @@ library(tidyverse)
 library(jtools)
 library(extrafont)
 
-font_import()
-loadfonts(device="win")  
+accuracy <- read_csv("graphics/graphics_data/accuracy_table.csv", skip = 1) %>% 
+  mutate_if(is.numeric, round, 4) %>% 
+  select(-1) %>% 
+  t() 
+
+rmse <- accuracy[, 3:4]
+colnames(rmse) <- c( "RMSE Classifier",  "RMSE Regressor")
+rmse %>% 
+kbl( caption = "Model Performance", booktabs = T, "latex") %>% 
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  add_footnote("Note: this is the full dataset with\n 6497 observations") %>% 
+  clipr::write_clip()
+
+
+
+colnames(rmse) <- c( "RMSE Chemical Data",  "RMSE Vivino Data")
+rmse %>% 
+kbl(booktabs = T) %>% 
+  kable_material_dark("striped", font_size = 22) %>% 
+  row_spec(0, color = "red") %>% 
+  add_footnote("Comparing the degree to which wine quality can be modeled given features avalible", notation = "none") 
+accuracy <- accuracy[, 1:2]
+
+colnames(accuracy) <- c("Accuracy", "AUC")
+library(kableExtra)
+accuracy %>% 
+  kbl( caption = "Model Performance", booktabs = T, "latex", align = c("c", "c")) %>% 
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  clipr::write_clip()
+
+
+cbind(row.names(accuracy), c(0.8734, 0.8441, 0.8704, 0.880)) %>% 
+  kbl( caption = "Model Performance", booktabs = T, "latex") %>% 
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  add_footnote("Note: this is the full dataset with\n 6497 observations") %>% 
+  clipr::write_clip()
+
+
+  
+dark_theme_gray <- read_csv("graphics/graphics_data/vivino.csv") %>% 
+  select(-1)
+
+vivino %>% 
+  ggplot(aes(x = Rating * 2)) +
+  geom_histogram(bins = 30, color = "black") +
+  labs(x = "Wine Rating", y = NULL) +
+  scale_x_continuous(breaks = 1:10) +
+  scale_y_continuous(label = scales::comma) +
+  theme_apa() 
+ggsave("docs/latex_files/plots/vivino_rating.png", width = 2.8, height = 3)
+
+vivino_kable <- vivino %>% 
+  select_if(is.numeric) %>% 
+  map_df(~map(list(Mean = mean, Std = sd), exec, .x), .id = "Feature") %>% 
+  mutate_if(is.numeric, round, 3)
+
+vivino_kable %>%   
+  kbl( caption = "Vivino Features table", booktabs = T, "latex") %>% 
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  clipr::write_clip()
+
+vivino_kable %>% 
+  kbl(booktabs = T) %>% 
+  kable_material_dark("striped", font_size = 22) %>% 
+  row_spec(0, color = "red") %>% 
+  add_footnote("Note: this is the full dataset with 13,564 observations", notation = "none") 
+
+
+cat_preds <- vivino %>% 
+  select(Country, Region, Winery, wine_type) %>% 
+  
+  map_df(~map(list(Distinct = n_distinct), exec, .x), .id = "Feature") %>% 
+  mutate_if(is.numeric, round, 3) %>% 
+  arrange(Distinct)
+cat_preds %>% 
+  kbl( caption = "Vivino Features table", booktabs = T, "latex") %>% 
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  clipr::write_clip()
+
+cat_preds %>% 
+  mutate(Feature = str_replace_all(Feature,"wine_type", "Wine Type"))
+  kbl(booktabs = T) %>% 
+  kable_material_dark("striped", font_size = 22) %>% 
+  row_spec(0, color = "red")
 
 df <- read_csv("graphics/graphics_data/transformations_log.csv") %>% 
   select(-1) %>% 
@@ -19,16 +101,19 @@ training <- read_csv("graphics/graphics_data/training_set.csv") %>%
 
 
 
-read_csv("data/processed/wine_data_combined.csv") %>% 
+summary_table <- read_csv("data/processed/wine_data_combined.csv") %>% 
   rename_with(~str_to_title(str_replace_all(.x, "_", " "))) %>% 
   map_df(~ list(Mean = mean, Std = sd) %>%
            map(exec, .x), .id = "Feature") %>%
-  mutate_if(is.numeric, round, 3) %>% 
-  kbl( caption = "Demo table", booktabs = T, "latex") %>% 
-  kable_styling(latex_options = c("striped", "hold_position")) %>%
-  add_footnote("Note: this is the full dataset with\n 6497 observations") %>% 
-  clipr::write_clip()
+  mutate_if(is.numeric, round, 3)
 
+summary_table %>% 
+  filter(Feature != "Quality") %>% 
+  kbl(booktabs = T) %>% 
+  kable_material_dark("striped", font_size = 22) %>% 
+  row_spec(0, color = "red") %>% 
+  add_footnote("Note: this is the full dataset with 6,497 observationss", notation = "none") 
+  
 df_raw %>% 
  map(list(mean = mean, sd = sd)) 
   
@@ -118,6 +203,8 @@ plot_data <- read_csv("data/processed/wine_data_combined.csv") %>%
   group_by(quality) %>% 
   summarise(n = n())
 library(scales)
+
+
 plot_data %>% 
   ggplot(aes(x = as.character(quality), y=n)) +
   geom_col(fill="grey52", color="black") +
@@ -129,6 +216,33 @@ plot_data %>%
   scale_x_discrete(breaks = 3:9) +
   scale_y_continuous(labels = comma) +
   theme(text=element_text(family="Times New Roman", size = 12)) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") 
 
 # ggsave("docs/latex_files/plots/target.png", width = 3, height = 3)
+
+library(ggdark)
+
+plot_data %>% 
+  ggplot(aes(x = as.character(quality), y=n)) +
+  geom_col(fill="red", color="white") +
+  geom_text(aes(label=n), nudge_y = 58, size=5) +
+  scale_fill_manual(values = c("grey12"))+
+  labs(color = "", x = "Wine Quality", y = "Count") +
+  dark_theme_gray(base_size=15)+
+  scale_x_discrete(breaks = 3:9) +
+  scale_y_continuous(labels = comma) +
+  theme(legend.position = "bottom") 
+
+
+
+# ggsave("docs/latex_files/plots/target.png", width = 3, height = 3)
+
+vivino %>% 
+  mutate(Rating = Rating * 2) %>% 
+  ggplot(aes(x = Rating)) +
+  geom_histogram(bins = 25, color = "white", fill = "red") +
+  labs(color = "", x = "Wine Quality", y = "Count") +
+  dark_theme_gray(base_size=15)+
+  scale_x_continuous(breaks = 0:10) +
+  scale_y_continuous(labels = comma, breaks = seq(0, 5000, 500)) +
+  theme(legend.position = "bottom") 

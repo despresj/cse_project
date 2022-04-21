@@ -1,0 +1,5 @@
+
+
+$$
+\textrm{RMSE}= \sqrt{\sum_{i=0}^{N_{test}} \frac{(y - \hat{y})^2}{N_{test}}}
+$$
