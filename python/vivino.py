@@ -4,26 +4,49 @@ import numpy as np
 import joblib
 import multiprocessing
 from sklearn import model_selection
+import glob
 
-start = time.time()
-df = pd.read_csv("data/processed/wine_data_combined.csv")
-cols_to_adjust = [x for x in df.columns if x not in ["quality", "is_red"]]
-
-retrain = False # Set to True and rerun the model gridsearches
+retrain = True # Set to True and rerun the model gridsearches
 train_ensemble = True
 
-model_path = "saved_models/_yao_transform_"
+start = time.time()
+
+list_of_df = []
+for file in glob.glob("data/vivino/"+ "/*csv"):
+    df = pd.read_csv(file, index_col=None, header=0)
+    df["wine_type"] = file.replace("../data/vivino/", "").replace(".csv", "")
+    list_of_df.append(df)
+
+frame = pd.concat(list_of_df, axis=0, ignore_index=True)
+
+frame = frame.drop("Winery", axis=1)
+frame = frame.drop("Region", axis=1)
+df = pd.get_dummies(frame)
+print(frame.shape)
+from re import sub
+def snake_case(s):
+  return '_'.join(
+    sub('([A-Z][a-z]+)', r' \1',
+    sub('([A-Z]+)', r' \1',
+    s.replace('-', ' ').replace("'", ""))).split()).lower()
+
+df.columns = [snake_case(x) for x in df.columns]
+
+df.rename(columns={"rating":"quality"}, inplace=True)
+cols_to_adjust = ["quality", "number_of_ratings", "price"] 
+
+model_path = "saved_models/_yao_transform_price_model"
 
 cores = multiprocessing.cpu_count()
 cores -= 2 # so i can do other stuff when this trains
 
 import xgboost as xgb
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression
 from sklearn import svm
 from sklearn.model_selection import cross_val_score
 
 df_train, df_test = model_selection.train_test_split(
-        df, test_size=0.2, random_state=66, stratify=df["quality"]
+        df, test_size=0.2, random_state=66
 )
 
 from sklearn.compose import ColumnTransformer
@@ -35,47 +58,33 @@ df_transform = ColumnTransformer(
 )
 
 df_train = pd.DataFrame(df_transform.fit_transform(df_train), columns=df.columns)
-df_train\
-        .groupby('quality', group_keys=False)\
-        .apply(lambda x: x.sample(min(len(x), 5500)))
 
 X_train = df_train.drop("quality", axis=1)
 y_train = pd.Categorical(df_train["quality"], ordered=True)
 
 ### Impute outliers ###
 
-from sklearn.impute import KNNImputer
-
-knn_imputer = KNNImputer(n_neighbors=2)
-knn_inputed = knn_imputer.fit(X_train)
- 
-def knn_impute_outliers(df, inputer, threash=0.98):
-     new = np.where( (df > (np.quantile(df, threash, axis=0)) ) | ( df < (np.quantile(df, 1-threash, axis=0)) ), np.nan, df)
-     return pd.DataFrame(inputer.fit_transform(new), columns=df.columns)
-
-X_train = knn_impute_outliers(X_train, knn_inputed)
-
 models = []
 
 ### Grouping ###
 
-### Logistic Reg ###
+###  Reg ###
+# from sklearn.linear_model import ElasticNet
+# elastic_net = ElasticNet()
+# params_ = {"max_iter": [10],
+#                       "alpha": [1],
+#                       "l1_ratio": np.arange(0.0, 1.0, 0.5)}
+# _grid_search = model_selection.GridSearchCV(
+#     elastic_net, params_, n_jobs=cores)
+# # Not all of these converge given the low tolerance I set above
 
-multi_logistic_reg = LogisticRegression(penalty="elasticnet", solver="saga", tol=1e-2, max_iter=500)
-
-params_logistic = {"C": np.logspace(-3, 0, 250), "penalty": ["l1", "l2"]}
-
-logistic_grid_search = model_selection.GridSearchCV(
-    multi_logistic_reg, params_logistic, n_jobs=cores)
-# Not all of these converge given the low tolerance I set above
-
-if retrain:
-    logistic_grid_search.fit(X_train, y_train)
-    joblib.dump(logistic_grid_search, f"{model_path}logistc_grid_search.dat")
+# if retrain:
+#     _grid_search.fit(X_train, y_train)
+#     joblib.dump(_grid_search, f"{model_path}logistc_grid_search.dat")
     
 
-logistic_grid_search = joblib.load(f"{model_path}logistc_grid_search.dat")
-models.append(("logistic_reg", logistic_grid_search))
+# _grid_search = joblib.load(f"{model_path}logistc_grid_search.dat")
+# models.append(("_reg", _grid_search))
 
 ### XGB ###
 
@@ -83,7 +92,7 @@ params_xgb = {'max_depth': np.arange(3, 15, 1 ),
         'colsample_bytree' : np.arange(0.2, 0.6, 0.1),
         "learning_rate": np.logspace(-3, -1, 9)}
 
-xgboost = xgb.XGBClassifier()
+xgboost = xgb.XGBRegressor()
 
 xgb_grid_search = model_selection.GridSearchCV(
     xgboost, params_xgb, n_jobs=cores
@@ -109,31 +118,27 @@ if retrain:
     
 svm_grid_search = joblib.load(f"{model_path}svm_gridsearch.dat")
 print(svm_grid_search.best_params_)
-models.append(("s", svm_grid_search))
+models.append(("svm", svm_grid_search))
 
 from sklearn import metrics
 df_test = pd.DataFrame(df_transform.fit_transform(df_test), columns=df.columns)
 X_test = df_test.drop("quality", axis=1)
-X_train = knn_impute_outliers(X_train, knn_inputed)
 y_test = pd.Categorical(df_test["quality"], ordered=True)
 
 
 ### Metrics ###
-
-
-def num(x):
-    return pd.to_numeric(x)
 ### Test Data ###
 auc_list = []
 accuracy_list = []
-rmse_list = []
+
 yhat = xgb_grid_search.predict(X_test)
 phat = xgb_grid_search.predict_proba(X_test)
-rmse = metrics.mean_squared_error(num(yhat), num(y_test), squared=False)
-rmse_list.append(rmse)
 
 auc = metrics.roc_auc_score(y_test, phat, multi_class='ovr')
 accuracy = metrics.accuracy_score(y_test, yhat)
+from sklearn.metrics import mean_squared_error
+
+rmse = metrics.mean_squared_error(yhat, ytest, squared=False)
 
 auc_list.append(auc)
 accuracy_list.append(accuracy)
@@ -141,25 +146,22 @@ print("xgb  test")
 print("auc", auc)
 print("accuracy", accuracy)
 
-phat = logistic_grid_search.predict_proba(X_test)
-yhat = logistic_grid_search.predict(X_test)
+phat = _grid_search.predict_proba(X_test)
+yhat = _grid_search.predict(X_test)
 
 auc = metrics.roc_auc_score(y_test, phat, multi_class='ovr')
 accuracy = metrics.accuracy_score(y_test, yhat)
-rmse = metrics.mean_squared_error(num(yhat), num(y_test), squared=False)
-rmse_list.append(rmse)
 auc_list.append(auc)
 accuracy_list.append(accuracy)
-print("logistic  testing")
+print("  testing")
 print("auc", auc)
 print("accuracy", accuracy)
 
 svm_grid_search 
 
 phat = svm_grid_search.predict_proba(X_test)
-yhat = logistic_grid_search.predict(X_test)
-rmse = metrics.mean_squared_error(num(yhat), num(y_test), squared=False)
-rmse_list.append(rmse)
+yhat = _grid_search.predict(X_test)
+
 auc = metrics.roc_auc_score(y_test, phat, multi_class='ovr')
 accuracy = metrics.accuracy_score(y_test, yhat)
 
@@ -195,8 +197,6 @@ if train_ensemble:
     accuracy = metrics.accuracy_score(y_test, yhat)
     auc_list.append(auc)
     accuracy_list.append(accuracy)
-    rmse = metrics.mean_squared_error(num(yhat), num(y_test), squared=False)
-    rmse_list.append(rmse)
     print("final test")
     print("auc", auc)
     print("accuracy", accuracy)
@@ -212,8 +212,7 @@ print(f"runtime {(end - start)/60}")
 
 pd.DataFrame([["XGBoost", "Elastic Net", "SVM", "Ensemble"],
     accuracy_list,
-    auc_list,
-    rmse_list])\
+    auc_list])\
         .to_csv("graphics/graphics_data/accuracy_table.csv") 
 
 
