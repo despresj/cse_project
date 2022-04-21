@@ -1,4 +1,4 @@
-\documentclass[16pt,twocolumn,letterpaper,titlepage]{article}
+ \documentclass[16pt,twocolumn,letterpaper,titlepage]{article}
 \usepackage{apacite}
 \usepackage{tablefootnote}
 \usepackage{titling}
@@ -21,7 +21,7 @@
 
 \setlength{\droptitle}{-12em}  
 \setlength\bibitemsep{\baselineskip}
-\title{Machine Learning Methods to Predict Wine Quality}
+\title{Two Approaches to Predicting Wine Quality}
 
 \author{
     Joseph Despres
@@ -46,19 +46,19 @@
 
 % including a summary of the problem, previous
 
-Anyone looking to purchase a bottle of wine will be facing a search space so large that only possible for a computer to search through. Wine varies significantly from region to region. Therefore, this is an ideal problem for machine learning to handle. In particular, this project aims to specify a function that maps the chemical properties of various wines to the judge's quality scores. This report begins with a problem description followed by a description of the data. I use the Sklearn package \cite{scikit-learn} in the Python Programming Language \cite{10.5555/1593511}. After that, I devote several paragraphs to comparing different feature scaling strategies against logistic regression because there is a significant difference in runtime and performance. After that, I discuss the modeling techniques, elastic net regression, XGBoost, and Support Vector Machines in an ensemble to reach a training set prediction accuracy of 69%. After that, I go back into the dataset and attempt to improve the model's accuracy through some more feature engineering. Finally, test the model on the testing set and achieve a final accuracy of 69%.
+Anyone looking to purchase a bottle of wine is facing a large and complex search space. Wine varies significantly in price, quality, and chemical properties with no obvious relationship; therefore, predicting the quality of a wine based on its features is a problem well suited for machine learning methods. In particular, this project aims to specify a function that maps the chemical and non-chemical properties of wine to a quality rating. To accomplish this, I will be using the Sklearn package \cite{scikit-learn} in the Python Programming Language \cite{10.5555/1593511}. This report begins with a formal description of the problem followed by a detailed description of the data available. I explain two different datasets that will be used to model quality. After that, I compare different feature scaling on logistic regression performance and show a significant difference in runtime and accuracy. After that, I discuss the ensemble of models I am using Elastic net Multinomial Regression, XGBoost, and Support Vector Machines. After that, I discuss additional feature engineering that improved the ensemble's accuracy by roughly 2\%. These models together reach a testing set accuracy of 67\%.
 
 \section{Problem Description}
 
 % including a detailed description of the problem you try to address
 
-This project aims to discover the relationship between wine quality and chemical properties. The motivation for this project is that one purchasing wine seriously must consider different regions, grapes, growing climate, seasons, storage time, and substantial variations in quality and price. This is a problem well suited to Machine Learning because of the vast and complex search space. The benefits of an accurate predictive wine model are that one could select excellent wine at a low price, this lowers the risk of purchasing low-quality wine, or even determining undervalued wine at auctions.
+This project aims to discover the relationship between wine quality chemical properties, and factors commonly associated with quality wine. The motivation for this project is that one purchasing wine seriously must consider different regions, grapes, growing climate, seasons, storage time, and substantial variations in quality and price. This is a vast and complex search space therefore, the problem is well suited to Machine Learning. This project aims to accurately predict the quality of wine given its chemical properties and determine if chemical properties are more informative of quality than common factors such as year, region, and price. The benefits of an accurate wine model are that one could select excellent wine at a low price, discover undervalued wines at markets and auctions, avoid low-quality wine, and purchase wine confidently without expertise.
 
 \section{Data}
 
-To determine the quality score based on the distinct chemical properties of different wines, we will use a dataset hosted by the University of California Irvine's Machine Learning repository \cite{Lichman:2013}. These data are from	a study conducted by the Portuguese government studying a data mining approach to predicting human wine taste \cite{Cortez}. Using support vector machines, they achieve an out-of-sample accuracy of 33%. Given this is in 2009, the purpose of this study is to employ a mixture of newer methods and attempt to outperform the published by Cortez. First, I do not have the domain knowledge to assess the validity of the data\footnote{I abandoned the Bayesian methods in my proposal because I do not have the expertise to set informative priors. Without informative priors, the model performance is similar to classical Machine Learning methods.}. I have no idea what is an unreasonable level of acidity, for instance. However, given that this is a published dataset, I assume all the observations are actual observations and not measurement errors.
+This study is predicting wine quality using different datasets. The first is based on the distinct chemical properties of a wine. Another is using more common factors such as price, year, and region. The chemical data is hosted by the University of California Irvine's Machine Learning Repository \cite{Lichman:2013}. These data are from a study conducted by the Portuguese Government researching a Data Mining approach to predicting wine taste \cite{Cortez}. In their study, they achieve an out-of-sample accuracy of 64\% using Support Vector Machines. First, I do not have the domain knowledge to assess the validity of these data\footnote{I abandoned Bayesian methods outlined in my proposal because I do not have the requisite expertise to set informative priors. Without informative priors, the model performance is similar to Machine Learning methods with a significantly longer runtime.}. I have no idea what is a reasonable level of acidity, for instance. However, given that this is a published dataset, I assume all the observations are valid observations and not measurement errors.
 
-This is a structured, curated, tabular dataset conveniently in first normal form. The outcome we wish to predict is the quality as rated by a professional wine judge. One thing that was not obvious from the UCI repository is the fact that there are duplicated rows, which means multiple judges rated the same wine as the same quality. Judges are anonymous in these data, therefore there are no features indicating which judge is scoring. I will come back to this point after discussing model specifications. There are 11 additional features, which are listed in Table 1.  
+The chemical Dataset is a structured, curated, tabular dataset made of numerical features conveniently in First Normal Form. The outcome we wish to predict is the quality as rated by a professional wine judge. It is not obvious from the UCI repository, but there are duplicated rows. This means multiple judges rated the same wine as the same quality. Judges are anonymous in these data, so there are no features indicating which judge is doing the scoring. There are 11 additional features, which are listed in Table 1.  
 
 \begin{table}[!h]
 
@@ -84,27 +84,73 @@ Sulphates & 0.531 & 0.149\\
 Quality & 5.818 & 0.873\\
 \cellcolor{gray!6}{Is Red} & \cellcolor{gray!6}{0.246} & \cellcolor{gray!6}{0.431}\\
 \bottomrule
-\multicolumn{3}{l}{Note: 6497 observations}\\
+\multicolumn{3}{l}{Note: 6,497 observations}\\
+\end{tabular}
+\end{table}
+
+The target is wine quality as scored by a professional judge. Wine quality is an ordinal categorical variable with a significantly unbalanced number in each category. The reality of this problem is that very few wines will be of very high quality and many will be average. See Figure 2 for a plot of the class distributions. Note that only 5 of 6,497 of these wines are rated 9/10. This may necessitate some re-sampling methods because the most valuable model will be able to detect high-quality wine. 
+
+\begin{figure}[!htb]
+	\center{\includegraphics[width=\columnwidth]
+        {plots/target.png}}
+	\caption{\label{fig:my-label} Wine Quality Determined by Professional Judge}
+\end{figure}
+
+
+The second dataset used is provided by a Kaggle\cite{kaggle} competition. The host scrapped data from ratings published by a popular wine selecting company, Vivino. Unlike the first dataset, these are a mix of casual and sophisticated consumers. Some of the features are numeric however others are nested categories. The winery, region, and country are in a hierarchical structure, meaning a winery is within a region, within a country. To appropriately model this would require some multilevel hierarchical models that are, as I understand, beyond the scope of Scikit-Learn.\footnote{I fit a hierarchical model using specialized statistical software (Stan) and found substantial random effects of winery independent of price, region, and country.}
+
+\begin{table}[!h]
+
+\caption{Vivino Features table}
+\centering
+\begin{tabular}[t]{lr}
+\toprule
+Feature & Distinct\\
+\midrule
+\cellcolor{gray!6}{Wine Type} & \cellcolor{gray!6}{4}\\
+Country & 33\\
+\cellcolor{gray!6}{Region} & \cellcolor{gray!6}{861}\\
+Winery & 3505\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+To make these data compatible with Sklearn's modeling format I encoded these categorical variables into a matrix using 0 and 1 encoding resulting in a highly sparse matrix. I recognize this is not the most appropriate way to model this dataset, however, I want to compare the predictive power of the two datasets. Since these are in two very different formats, I am willing to make such a compromise. In the next section, we will set up methods to explore the predictive power of each dataset.
+
+\begin{table}[!h]
+
+\caption{Vivino Numerical Features table}
+\centering
+\begin{tabular}[t]{lrr}
+\toprule
+Feature & Mean & Std\\
+\midrule
+\cellcolor{gray!6}{Rating} & \cellcolor{gray!6}{3.866} & \cellcolor{gray!6}{0.296}\\
+Number of Ratings & 428.322 & 1838.414\\
+\cellcolor{gray!6}{Price} & \cellcolor{gray!6}{33.025} & \cellcolor{gray!6}{70.900}\\
+\bottomrule
+\multicolumn{3}{l}{Note: 13,834 observations}\\
 \end{tabular}
 \end{table}
 
 
 
-the target is wine quality as scored by a professional judge. Wine quality is an ordinal categorical variable. The class assignments are significantly unbalanced. However, the nature of this problem is that very few wines will be of very high quality and many will be average. See Figure 2 for a plot of the class distributions. Note that only 5 of 6,497 of these wines are rated 9/10. This may necessitate some re-sampling methods because the most valuable model will be able to detect high-quality wine. We have no examples of a 10, a 1, or a 2. At this point, I will split the data and stash 30\% of the data to reserve for testing and I will not touch those data until it is time to report a final result.
-
 \begin{figure}[!htb]
 	\center{\includegraphics[width=\columnwidth]
-        {plots/target.png}}
-	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformation}
+        {plots/vivino_rating.png}}
+	\caption{\label{fig:my-label} Vivino Wine Quality Scores}
 \end{figure}
 
 \section{Methodology}
-After some difficulties with fitting initial models and performance plateaus associated with the Min-max Scaling method. I decided to test and document the results of using several different scaling strategies. I decided to run 2,500 different partitions of training and validation data with a 50\% split from the training data. To investigate the effects of different scaling schemes. There was a significant difference in results as well as runtime. This is due to the design matrices having difficulties inverting. The runtimes will differ based on the model, software implementation, hardware, and datasets so I don't list them.  
 
-This paper will consider two performance metrics. The first accuracy is measured as the percentage of correct predictions. Note, this is an unbalanced assignment problem, accuracy should not be compared to the number of classes but rather the frequency of the most frequent class. The most frequent class is a quality score of 6. Which occurs in about 43\% of the observations. This metric is intuitive but does not capture our true intentions. I will also use a balance between precision and recall known as AUC. AUC is simply the area under the ROC curve.
+I split the data into training and testing sets and reserved 20\% of the data for testing. I will not touch these data until it is time to report a final result. This paper will consider two classification performance metrics and one prediction metric. The first is accuracy. Accuracy is measured as the ratio of correct predictions to predictions made. Note, this is an unbalanced assignment problem, accuracy should not be compared to the number of classes but rather the frequency of the most frequent class. The most frequent class is a quality score of 6. Which occurs in about 43\% of the observations. This metric is intuitive but does not capture our true intentions. I will also use a balance between precision and recall AUC. AUC is simply the area under the ROC curve. To compare the performance of both datasets, I will use Root Mean Squared Error. This, metric is well suited for regression, not classification. However, the target class is numeric 1-10 so RMSE can be used by changing the data type from categorical to numeric and applying the formula. 
+
+After some difficulties fitting initial models to the chemical dataset, I test and document the results using several different scaling strategies.\footnote{This is included because I was rather shocked by how much of a difference it made.}  I ran 2,500 different partitions of training and validation data with a 50\% split. As shown in Table 1 and Figure 3, there is a significant difference in predictive power. This is due to the design matrices having difficulties inverting with inappropriate scaling. Notice that the mean AUC increases from 0.59 to 0.733 depending on the scaling method. Also, the standard deviation of the AUC is reduced from 0.024 to 0.015. The model is faster, more accurate, and more consistent using appropriate feature scaling methods. 
+
+
 \begin{table}[!h]
 
-\caption{Demo table}
+\caption{AUC by feature scaling method}
 \centering
 \begin{tabular}[t]{lrrr}
 \toprule
@@ -121,7 +167,7 @@ Yao Johnson Transform & 0.733 & 0.015 & 0.732\\
 \end{tabular}
 \end{table}
 
-The Yao-Johnson outperforms the Standard scaling methods, however, not by much and is a far more complicated transformation process. It is a Box-Cox transformation method modified to take values less than 0. The Box-Cox Method is for linearizing vectors by some exponent that will convert the variable to a linear scale. I do not see any indication that wine's chemical properties are anything other than linear in practice. My reasoning for this is that one does not add an exponentially increasing or decreasing amount of sugar for instance. Although it has slightly better accuracy and lower standard deviation, both are desirable properties, the increase in performance did not justify the additional complexity and a deviation from what I felt is reasonable. Therefore, I will use the standard scaler.
+The Yao-Johnson outperforms the Standard scaling methods, however, not by much and is a far more complicated transformation process. Essentially, it is a Box-Cox transformation method modified to fit feature values less than 0. The Box-Cox Method is for linearizing vectors by finding the exponent that will convert the variable to a close to a linear scale. I conclude that is the best scaling strategy because is more accurate and has less standard deviation, and had a shorter runtime. 
 
 \begin{figure}[!htb]
 	\center{\includegraphics[width=\columnwidth]
@@ -129,27 +175,66 @@ The Yao-Johnson outperforms the Standard scaling methods, however, not by much a
 	\caption{\label{fig:my-label} Comparing Resampled Prediction Accuracy by Transformationf}
 \end{figure}
  
-After studying the features and exploratory plotting, we are now ready to specify the models. The plan is to use an ensemble of models to predict wine quality. The idea is that a collection of visiting classifiers will be more accurate than a single one. The reasoning is that one model could be wrong in many ways however it would be correct in only one. Add a collection together and they will be collected right more than wrong.
+I plan to use an ensemble of models to predict wine quality. The intuition behind this is that a collection of classifiers will be more accurate than a single because one model could be wrong in many ways, however, it would be correct in only one.
 
+The first model is the Multinomial Logistic Regression to the model. This model is based on estimating the cumulative log odds of belonging to a given category based on the features. I add some regularization parameters $L^1$ and $L^2$ norms. commonly referred to as elastic net regression. A grid-search over a five-fold cross-validation shows that an optimal $L^1 = 0.0315$ and $L^2 = 0.013$. This achieves a training set accuracy of 51.3\% and an AUC of 0.775. These are not impressive results, so we will fit a Support Vector Machines. 
 
-The first model is the multinomial logistic regression used during the feature scaling trials. This model is based on estimating the cumulative log odds of belonging to a given category based on the features. I add some regularization parameters $L^1$ and $L^2$ norms. commonly referred to as elastic net regression. A grid-search over a five-fold cross-validation shows that an optimal $L^1 = 0.0315$ and $L^2 = 0.013$. This achieves a training set accuracy of 54.53\% and an AUC of 0.775. These are not impressive results, so we will fit a Support Vector Machines. 
+A Support Vector Machine aims to find the maximum margin hyperplane between features that separate points. I use the radial basis function kernel and tune only the regularization parameter squared $L^2$ norm. After cross-validating I find the best regularization parameter to be 6.58. This reaches an in-sample accuracy of 52.2\% and an AUC of 0.781. A very slight improvement.\footnote{Cortez was able to get to 62\% by altering the decision boundaries having a model make more mid-range-quality predictions.}  
 
-A support vector machine model aims to find the maximum margin hyperplane between features that separate points. I use the radial basis function kernel and tune only the regularization parameter squared $L^2$ norm. After cross-validating I find the best regularization parameter to be 6.58. This reaches an in-sample accuracy of 60\% and an AUC of 0.801. A slight improvement. 
+After that, I use XGBoost \cite{Chen2016} an efficient implementation of gradient boosted trees. There are many parameters to search through, however, I will only tune max tree depth, column sample by tree, and learning rate. After tuning, I found the column sample to be 50\% to be the best a learning rate of about 0.034 and a max depth of 13. This yields an astonishing sample accuracy of 64.5\% and an AUC of 0.848. This is a substantial improvement over the past two models. From here, I will wrap all three in an ensemble and test the accuracy. Given these metrics, it may be better to not even ensemble and just use XGBoost. I compromise by weighting the XGBoost model three times heavier. 
 
-After that, I use XGBoost \cite{Chen2016} an efficient implementation of gradient boosted trees. There are many parameters to search through, however, I will only tune max tree depth, column sample by tree, and learning rate. After tuning, I found the column sample to be 50\% to be the best a learning rate of about 0.034 and a max depth of 13. This yields an astonishing sample accuracy of 99.5\% and an AUC of 0.998. This is a substantial improvement over the past two models. From here, I will wrap all three in an ensemble and test the accuracy. Given these metrics, it may be better to not even ensemble and just use XGBoost. 
+After fitting this ensemble, I do some more feature engineering to improve the model as much as possible. First, I address the unbalanced assignment by bootstrap resampling until there are 10,000 rows of each of the quality categories. This strategy is crude and expensive, however, it improves the model by roughly 2\% depending on the seed. After that, I do some imputation of outliers. To do this, I replaced any data point greater than 99.5\% percentile or less than the 0.5\% percentile with an NA. After that, I used a simple KNN imputer to repopulate the data frame with an estimate based on the datapoint's nearest neighbors. This did not improve the out-of-sample accuracy. However, since It did not reduce it I will keep it, considering this will likely make the model more robust in the case of extreme outliers in the testing set.
 
-Then I save these models and wrap them into one ensemble model. Then fit that to the training data and compare different approaches. I want to re-engineer some features and report some results. 
+I will do similar modeling with the second dataset, only changing classification for regression. I do the same Yao-Johnson feature scaling and grid search through parameters for an ensemble. 
 
 %  including a detailed description of methods used
 
 \section{Results}
 
-The XGBoost model wildly outperforms the linear I found it has an accuracy of the final testing set. The ensemble. The model predictions are in Figure. This shows that the model could be used to 
+There is a significant level of noise in both of these datasets. Additionally, there are important and informative features missing from both datasets. which explains the accurate but unimpressive predictions from both models. In this case the data with Chemical properties of wine. An ensemble of Elastic Net Multinomial Regression, Support Vector Machines, and XGBoost reach a training set accuracy of 63\%. Individual performance is listed in Table 5. I was unable to significantly outperform the results in the paper accompanying the data without adjusting the classification boundaries. However, the factors more commonly associated with quality such as the region, year, price, and winery, are all missing from these data. Therefore, we will use the price dataset and determine if we can specify a more informative model. Expertise in this area is required to determine the limitations of this chemical model. I would like to study a combination of chemical properties from the UCI data and the Vivino data together. I believe that wine quality could be modeled far more accurately given those features combined.
+
+
+\begin{table}[!h]
+
+\caption{Classification Model Performance With Standard Metrics}
+\centering
+\begin{tabular}[t]{lrr}
+\toprule
+  & Accuracy & AUC\\
+\midrule
+\cellcolor{gray!6}{XGBoost} & \cellcolor{gray!6}{0.6377} & \cellcolor{gray!6}{0.8361}\\
+Elastic Net & 0.5146 & 0.7604\\
+\cellcolor{gray!6}{SVM} & \cellcolor{gray!6}{0.5146} & \cellcolor{gray!6}{0.7584}\\
+Ensemble & 0.6731 & 0.8885\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[!h]
+
+\caption{Model Performance}
+\centering
+\begin{tabular}[t]{lrr}
+\toprule
+  & RMSE Classifier & RMSE Regressor\\
+\midrule
+\cellcolor{gray!6}{XGBoost} & \cellcolor{gray!6}{0.7190} & \cellcolor{gray!6}{0.9265}\\
+Elastic Net & 0.8053 & 0.9054\\
+\cellcolor{gray!6}{SVM} & \cellcolor{gray!6}{0.8053} & \cellcolor{gray!6}{0.9160}\\
+Ensemble & 0.7458 & 0.9108\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 % including a detailed description of your observations from the experiments
 
 \section{Conclusions}
 
-The main takeaway of this study 
+This study finds that wine quality can be predicted with an accuracy of 67\% using standard classification boundaries. Chemical features to predict a professional's appraisal seems to be more informative than using year and price predicting.  Wine quality can be modeled with machine learning methods, however, without more privileged access to data, this may not be very useful in practice as they are wrong a large portion of the time. 
+
+Further study in this area could be done with a comprehensive dataset combining chemical and non-chemical features of wine in the same dataset. Also, the discrepancy between a professional judge vs a casual consumer could be different in only location or actual preference. I would like a better understanding of the differences in ratings.  Additionally, the weather could also be combined into the data and determine when the best climate for a given grape making up a wine.
+
 % including a summary of the main contributions of the project and the lessons you learn from the project, as well as a list of some potential future work.
 
 \clearpage
@@ -157,14 +242,6 @@ The main takeaway of this study
 
 \bibliography{References}
 
-\section{Appendix}
-
-\begin{figure}[!htb]
-	\center{\includegraphics[width=\columnwidth]
-        {plots/transformations.png}}
-	\caption{\label{fig:my-label} Comparing Re-sampled Prediction Accuracy by Transformation}
-	
-\end{figure}
-
 \end{document}
+
 
